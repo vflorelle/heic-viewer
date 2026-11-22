@@ -1,0 +1,65 @@
+[package]
+name = "heic-viewer"
+version = "0.1.0"
+edition = "2024"
+description = "Visionneuse HEIC/HEIF (photos iPhone) sans extension payante Microsoft Store"
+license = "AGPL-3.0-only" # imposé par le crate `heic`
+
+[dependencies]
+# Décodeur HEIC/HEIF (HEVC) et AVIF (AV1) 100 % Rust (pas de libheif / libde265 / dav1d à
+# embarquer)
+heic = { version = "0.1.6", features = ["av1", "parallel"] }
+# Autres formats courants pour pouvoir parcourir un dossier mixte (JPEG, PNG...)
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "bmp", "webp", "tiff", "rayon"] }
+eframe = { version = "0.36", default-features = false, features = ["glow", "default_fonts", "x11", "wayland"] }
+rfd = "0.17"
+# Copie de l'image dans le presse-papiers
+arboard = { version = "3.6", default-features = false, features = ["image-data"] }
+# Lecture des métadonnées EXIF (JPEG, HEIF, PNG, WebP, TIFF)
+kamadak-exif = "0.6"
+# Dates dans le fuseau horaire local
+jiff = "0.2"
+# Gestion des couleurs (profils ICC, ex. Display P3 des iPhone) — pur Rust
+moxcms = "0.9"
+# Conversion des couleurs en parallèle
+rayon = "1"
+# Réduction Lanczos (nette) de l'image affichée sous 100 % — pur Rust, SIMD
+fast_image_resize = { version = "6", features = ["rayon"] }
+# Suivi du dossier affiché (suppression, ajout, renommage, modification d'images)
+notify = "8.2"
+# Options (langue) lisibles et modifiables à la main
+serde = { version = "1", features = ["derive"] }
+toml = "1"
+# Langue du système
+sys-locale = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+# Fenêtre native (propriétés de la barre des tâches, position du curseur)
+raw-window-handle = "0.6"
+# Explorateur (onglet du dossier, propriétés du fichier, Corbeille), barre des tâches, souris
+# (position, boutons), ouverture d'URL
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Storage_EnhancedStorage",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_System_Ole",
+    "Win32_System_Variant",
+    "Win32_UI_Accessibility",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_Shell_Common",
+    "Win32_UI_Shell_PropertiesSystem",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+
+# Le décodage HEVC est très lent sans optimisations : on optimise les deps même en debug.
+[profile.dev.package."*"]
+opt-level = 3
